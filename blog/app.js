@@ -9,8 +9,14 @@ const uri=process.env.mongodb_uri;
 mongoose.connect(uri);
 
 
+const database = mongoose.connection;
+database.on("error",(error) => {
+    console.log(error);
+});
 
-
+database.once("connected", () =>{
+    console.log("database connected");
+});
 
 
 
@@ -50,22 +56,30 @@ app.get('/blog/:id', (req,res) => {
     res.sendFile(path.join(__dirname, 'public', 'viewblog.html'));
 })
 
-app.get('/api/blog/:id', (req,res) => {
+app.get('/api/blog/:id', async (req,res) => {
     const id = req.params.id;
-    const blogs = blogPosts.find(blog => blog.BlogID == id);
-    if (!blogs) {
-        return res.status(404).json({ error: 'Blog not found' });
-    }
+    const blogs = await sample.findOne({BlogID:id})
+
+    // const blogs = blogPosts.find(blog => blog.BlogID == id);
+    // if (!blogs) {
+    //     return res.status(404).json({ error: 'Blog not found' });
+    // }
     res.json(blogs);
 })
 
-app.post('/blog', (req,res) => {
-    const {BlogID, title, author, content } = req.body;
-    console.log(req.body);
-    const newPost = {BlogID, title, author, content };
-    blogPosts.push(newPost);
-    console.log(blogPosts);
+app.post('/blog', async (req,res) => {
+   try{ 
+    const data= req.body;
+    const result= await sample.create(data);
+    // const newPost = {BlogID, title, author, content };
+    // blogPosts.push(newPost);
+    // console.log(blogPosts);
     res.redirect('/submitted');
+}
+catch(error){
+    console.log(error);
+    res.status(500).json();
+}
 })
 
 app.listen(3000, () => {
